@@ -328,7 +328,6 @@ class ConnectedAccounts:
         self.list = self._client.connected_accounts.list
         self.delete = self._client.connected_accounts.delete
         self.update_status = self._client.connected_accounts.update_status
-        self.refresh = self._client.connected_accounts.refresh
         self.enable = functools.partial(
             self._client.connected_accounts.update_status,
             enabled=True,
@@ -452,6 +451,50 @@ class ConnectedAccounts:
             id=response.connected_account_id,
             status="INITIATED",
             redirect_url=getattr(response, "redirect_url", None),
+            client=self._client,
+        )
+
+    def refresh(
+        self,
+        nanoid: str,
+        **kwargs: t.Any,
+    ) -> ConnectionRequest:
+        """
+        Refresh a connected account's authentication credentials.
+
+        This method initiates a new authentication flow for a connected account when credentials
+        have expired or become invalid. This may generate a new authentication URL for
+        OAuth flows or refresh tokens for other auth schemes.
+
+        :param nanoid: The unique identifier of the connected account to refresh.
+        :param query_redirect_url: Optional redirect URL to include in the query parameters.
+        :param body_redirect_url: Optional redirect URL to include in the request body.
+        :param kwargs: Additional keyword arguments to pass to the refresh method.
+            - extra_headers: Additional headers to pass to the refresh method.
+            - extra_query: Additional query parameters to pass to the refresh method.
+            - extra_body: Additional body parameters to pass to the refresh method.
+            - timeout: The timeout to wait for the refresh to complete.
+        :return: Connection request object that can be used to wait for the connection or get the redirect URL.
+        :raises: Error if the account doesn't exist or credentials cannot be refreshed.
+
+        Example:
+            # Refresh a connected account's credentials
+            connection_request = composio.connected_accounts.refresh('conn_abc123')
+            
+            # If OAuth re-authentication is required, redirect the user
+            if connection_request.redirect_url:
+                print(f"Visit: {connection_request.redirect_url} to re-authenticate")
+                # Wait for the connection to be re-established
+                refreshed_account = connection_request.wait_for_connection()
+        """
+        response = self._client.connected_accounts.refresh(
+            nanoid=nanoid,
+            **kwargs
+        )
+        return ConnectionRequest(
+            id=response.id,
+            status=response.status,
+            redirect_url=response.redirect_url,
             client=self._client,
         )
 
