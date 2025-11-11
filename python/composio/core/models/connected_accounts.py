@@ -12,6 +12,7 @@ from composio.client import HttpClient
 from composio.client.types import (
     connected_account_create_params,
     connected_account_retrieve_response,
+    connected_account_refresh_response,
     connected_account_update_status_response,
 )
 
@@ -456,9 +457,8 @@ class ConnectedAccounts:
 
     def refresh(
         self,
-        nanoid: str,
-        **kwargs: t.Any,
-    ) -> ConnectionRequest:
+        nanoid: str
+    ) -> connected_account_refresh_response.ConnectedAccountRefreshResponse:
         """
         Refresh a connected account's authentication credentials.
 
@@ -467,36 +467,14 @@ class ConnectedAccounts:
         OAuth flows or refresh tokens for other auth schemes.
 
         :param nanoid: The unique identifier of the connected account to refresh.
-        :param query_redirect_url: Optional redirect URL to include in the query parameters.
-        :param body_redirect_url: Optional redirect URL to include in the request body.
-        :param kwargs: Additional keyword arguments to pass to the refresh method.
-            - extra_headers: Additional headers to pass to the refresh method.
-            - extra_query: Additional query parameters to pass to the refresh method.
-            - extra_body: Additional body parameters to pass to the refresh method.
-            - timeout: The timeout to wait for the refresh to complete.
-        :return: Connection request object that can be used to wait for the connection or get the redirect URL.
+        :return: The refreshed connected account.
         :raises: Error if the account doesn't exist or credentials cannot be refreshed.
 
         Example:
             # Refresh a connected account's credentials
-            connection_request = composio.connected_accounts.refresh('conn_abc123')
-            
-            # If OAuth re-authentication is required, redirect the user
-            if connection_request.redirect_url:
-                print(f"Visit: {connection_request.redirect_url} to re-authenticate")
-                # Wait for the connection to be re-established
-                refreshed_account = connection_request.wait_for_connection()
+            refreshed_account = composio.connected_accounts.refresh('conn_abc123')
         """
-        response = self._client.connected_accounts.refresh(
-            nanoid=nanoid,
-            **kwargs
-        )
-        return ConnectionRequest(
-            id=response.id,
-            status=response.status,
-            redirect_url=response.redirect_url,
-            client=self._client,
-        )
+        return self._client.connected_accounts.refresh(nanoid)
 
     def wait_for_connection(
         self,
